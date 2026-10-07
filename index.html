@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LA ARENA — xLuchadores</title>
+<meta name="description" content="Cada xStock real es un luchador enmascarado. Sube o baja según el mercado real. Elige tu combate. Entretenimiento, no asesoramiento financiero.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08070a; --bg-raised:#111016; --bg-card:#15131a;
+    --border:#272530; --border-soft:#1b1a20;
+    --text:#f3f1ee; --text-dim:#9a9690; --text-faint:#5f5c5a;
+    --win:#7ee787; --win-bg:#0f1a10;
+    --lose:#ff4d4d; --lose-bg:#1d0d0d;
+    --neutral:#f0c75e; --neutral-bg:#1c1710;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --display: 'Bebas Neue', Impact, var(--mono);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--mono)}
+  body{line-height:1.5;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+  .wrap{max-width:1180px;margin:0 auto;padding-inline:20px}
+
+  /* broadcast scanline + vignette overlay */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:50;pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0px, rgba(255,255,255,.015) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode:overlay;opacity:.5;
+  }
+  body::after{
+    content:"";position:fixed;inset:0;z-index:49;pointer-events:none;
+    background:radial-gradient(130% 90% at 50% -10%, transparent 55%, rgba(0,0,0,.55) 100%);
+  }
+
+  header.nav{position:sticky;top:0;z-index:30;background:rgba(8,7,10,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--border-soft)}
+  header.nav .wrap{display:flex;align-items:center;justify-content:space-between;padding-block:14px}
+  .brand{font-family:var(--display);font-size:24px;letter-spacing:2px;text-decoration:none;display:flex;align-items:center;gap:8px;line-height:1}
+  .brand .x{color:var(--lose)}
+  nav.links{display:flex;gap:22px;font-size:12px;letter-spacing:1px;color:var(--text-dim)}
+  nav.links a{text-decoration:none}
+  nav.links a:hover{color:var(--text)}
+  .live-pill{display:none;align-items:center;gap:7px;font-size:11px;letter-spacing:1.5px;color:var(--lose);border:1px solid var(--lose);padding:5px 10px;border-radius:20px}
+  @media (min-width:640px){.live-pill{display:inline-flex}}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--lose);animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,77,77,.5)}50%{opacity:.45;box-shadow:0 0 0 5px rgba(255,77,77,0)}}
+
+  /* ticker marquee */
+  .ticker{background:var(--bg-raised);border-bottom:1px solid var(--border-soft);overflow:hidden;white-space:nowrap;position:relative}
+  .ticker::before,.ticker::after{content:"";position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none}
+  .ticker::before{left:0;background:linear-gradient(90deg,var(--bg-raised),transparent)}
+  .ticker::after{right:0;background:linear-gradient(-90deg,var(--bg-raised),transparent)}
+  .ticker-track{display:inline-flex;gap:0;animation:scroll-left 34s linear infinite}
+  .ticker:hover .ticker-track{animation-play-state:paused}
+  .ticker-item{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;font-size:12.5px;letter-spacing:.5px;border-right:1px solid var(--border-soft)}
+  .ticker-item b{font-weight:700}
+  .ticker-item.up{color:var(--win)}
+  .ticker-item.down{color:var(--lose)}
+  @keyframes scroll-left{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* ring rope divider */
+  .ropes{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;flex-direction:column;gap:5px}
+  .ropes span{display:block;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--border-soft) 10%,var(--border-soft) 90%,transparent)}
+  .ropes span.mid{background:linear-gradient(90deg,transparent,rgba(255,77,77,.35) 10%,rgba(255,77,77,.35) 90%,transparent)}
+
+  .hero{padding-block:76px 48px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;background:
+    radial-gradient(55% 60% at 20% 0%, rgba(255,77,77,.14), transparent 60%),
+    radial-gradient(45% 50% at 88% 15%, rgba(126,231,135,.09), transparent 60%);
+    pointer-events:none}
+  .kicker{font-size:12px;letter-spacing:4px;color:var(--text-dim);margin:0 0 18px;display:flex;align-items:center;gap:10px}
+  h1.title{font-family:var(--display);font-weight:400;font-size:clamp(54px,10vw,118px);line-height:.88;margin:0 0 22px;letter-spacing:1px}
+  h1.title span{display:block;opacity:0;transform:translateY(22px) scale(.97);animation:punch-in .6s cubic-bezier(.2,.8,.2,1) forwards}
+  h1.title span.x-line{animation-delay:.12s}
+  h1.title .x{color:var(--lose)}
+  @keyframes punch-in{to{opacity:1;transform:translateY(0) scale(1)}}
+  p.tagline{font-size:clamp(16px,2.2vw,20px);color:var(--text-dim);max-width:620px;margin:0 0 30px}
+  .hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+  .btn{display:inline-block;border:1px solid var(--border);padding:13px 22px;font-size:13px;letter-spacing:1px;text-decoration:none;color:var(--text);border-radius:3px;transition:border-color .15s,transform .15s;cursor:pointer;background:transparent;font-family:var(--mono)}
+  .btn:hover{border-color:var(--text-dim);transform:translateY(-1px)}
+  .btn.primary{background:var(--lose);color:#1a0505;border-color:var(--lose);font-weight:800}
+  .btn.primary:hover{opacity:.9}
+
+  section{padding-block:68px}
+  section.alt{background:var(--bg-raised)}
+  .section-head{margin-bottom:38px;max-width:680px}
+  .section-head.center{margin-inline:auto;text-align:center}
+  .round-tag{display:inline-block;font-family:var(--display);font-size:14px;letter-spacing:3px;color:var(--lose);border:1px solid var(--lose);padding:3px 12px;border-radius:2px;margin:0 0 14px}
+  h2{font-family:var(--display);font-weight:400;font-size:clamp(30px,4.6vw,46px);margin:0 0 12px;letter-spacing:.5px}
+  .section-head p{color:var(--text-dim);font-size:15px;margin:0}
+
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease, transform .6s ease}
+  .reveal.in-view{opacity:1;transform:translateY(0)}
+
+  /* Pelea de la semana */
+  .fight-grid{display:grid;grid-template-columns:1fr;gap:28px;align-items:center}
+  .fight-card{border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#000;box-shadow:0 20px 60px -20px rgba(255,77,77,.25)}
+  .fight-meta{display:flex;flex-direction:column;gap:18px}
+  .vs-row{display:flex;align-items:center;gap:16px;font-size:14px}
+  .vs-fighter{flex:1;border:1px solid var(--border);border-radius:4px;padding:14px 16px;background:var(--bg-card)}
+  .vs-fighter .name{font-weight:700;font-size:15px;margin-bottom:4px}
+  .vs-fighter .ticker-lbl{color:var(--text-dim);font-size:12px;letter-spacing:1px}
+  .vs-x{font-family:var(--display);font-weight:400;color:var(--text-faint);font-size:20px}
+  .fight-quote{border-left:2px solid var(--lose);padding-left:16px;color:var(--text-dim);font-size:14px}
+
+  /* Combate personalizado */
+  .picker-box{border:1px solid var(--border);border-radius:8px;background:var(--bg-card);padding:28px;max-width:900px;margin:0 auto}
+  .picker-row{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:end}
+  .picker-field{display:flex;flex-direction:column;gap:8px}
+  .picker-field label{font-size:11px;letter-spacing:1.5px;color:var(--text-dim)}
+  select{background:#000;color:var(--text);border:1px solid var(--border);border-radius:4px;padding:12px 10px;font-family:var(--mono);font-size:13.5px;width:100%}
+  .picker-vs{font-family:var(--display);font-size:22px;color:var(--text-faint);padding-bottom:12px;text-align:center}
+  .picker-go{display:flex;justify-content:center;margin-top:20px}
+  #fightResult{margin-top:28px;display:none}
+  #fightResult.show{display:block;animation:punch-in .4s ease forwards}
+  .result-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center}
+  .result-card{position:relative;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#000;text-align:center}
+  .result-card img{width:100%}
+  .result-card .cap{padding:10px;background:var(--bg-raised);font-size:12px}
+  .result-card .cap .nm{font-weight:700}
+  .result-card .cap .pc{font-family:var(--display);font-size:20px;letter-spacing:1px}
+  .result-card.winner{border-color:var(--neutral);box-shadow:0 0 0 1px var(--neutral), 0 20px 50px -15px rgba(240,199,94,.35)}
+  .winner-ribbon{position:absolute;top:10px;left:-34px;background:var(--neutral);color:#1a1409;font-family:var(--display);font-size:13px;letter-spacing:2px;padding:4px 40px;transform:rotate(-38deg);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+  .result-verdict{text-align:center;color:var(--text-dim);font-size:13.5px;margin-top:16px}
+  .result-verdict b{color:var(--neutral)}
+
+  /* Roster grid */
+  .roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+  .fighter-card{border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#000;transition:transform .2s, border-color .2s, box-shadow .2s}
+  .fighter-card:hover{transform:translateY(-5px);border-color:var(--text-faint);box-shadow:0 18px 40px -18px rgba(0,0,0,.6)}
+  .fighter-card img{width:100%;height:auto}
+  .fighter-foot{padding:12px 14px;background:var(--bg-card);border-top:1px solid var(--border-soft)}
+  .fighter-name{font-weight:700;font-size:13px;letter-spacing:.3px}
+  .fighter-quote{color:var(--text-dim);font-size:11.5px;margin-top:4px;line-height:1.4}
+
+  /* Cómo funciona */
+  .state-table{width:100%;border-collapse:collapse;font-size:13px}
+  .state-table th{text-align:left;color:var(--text-dim);font-weight:600;letter-spacing:1px;font-size:11px;padding:10px 14px;border-bottom:1px solid var(--border)}
+  .state-table td{padding:12px 14px;border-bottom:1px solid var(--border-soft)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px}
+  .pill.legend{background:var(--neutral-bg);color:var(--neutral)}
+  .pill.win{background:var(--win-bg);color:var(--win)}
+  .pill.draw{background:#161616;color:var(--text-dim);border:1px solid var(--border)}
+  .pill.down{background:var(--lose-bg);color:var(--lose)}
+  .pill.ko{background:var(--lose-bg);color:var(--lose)}
+
+  /* Token section */
+  .token-grid{display:grid;grid-template-columns:1fr;gap:40px}
+  .rule-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+  .rule-list li{display:flex;gap:12px;font-size:14.5px;color:var(--text-dim);border-bottom:1px solid var(--border-soft);padding-bottom:14px}
+  .rule-list li b{color:var(--text);font-weight:700}
+  .rule-list .mark{color:var(--win);font-weight:800}
+  .flow{font-size:12.5px;color:var(--text-dim);background:#000;border:1px solid var(--border);border-radius:6px;padding:18px;overflow-x:auto;white-space:pre}
+  .flow b{color:var(--text)}
+
+  .callout{border:1px solid var(--border);border-left:3px solid var(--neutral);background:var(--bg-card);padding:18px 20px;border-radius:4px;font-size:13.5px;color:var(--text-dim)}
+  .callout b{color:var(--neutral)}
+
+  footer{padding-block:48px;border-top:1px solid var(--border-soft)}
+  .foot-grid{display:flex;flex-wrap:wrap;gap:30px;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
+  .foot-disclaimer{font-size:12px;color:var(--text-faint);max-width:620px;line-height:1.7}
+  .foot-links{display:flex;gap:18px;font-size:12px;color:var(--text-dim)}
+  .foot-links a{text-decoration:none}
+  .foot-links a:hover{color:var(--text)}
+  .foot-bottom{font-family:var(--display);font-size:13px;letter-spacing:2px;color:var(--text-faint);border-top:1px solid var(--border-soft);padding-top:18px}
+
+  @media (min-width:860px){
+    .fight-grid{grid-template-columns:420px 1fr}
+    .token-grid{grid-template-columns:1.1fr .9fr}
+  }
+  @media (max-width:640px){
+    .picker-row{grid-template-columns:1fr}
+    .picker-vs{display:none}
+    .result-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">LA ARENA<span class="x">x</span></a>
+    <span class="live-pill"><span class="live-dot"></span>EN VIVO · CIERRE 7 OCT</span>
+    <nav class="links">
+      <a href="#combate">Combate</a>
+      <a href="#elenco">Elenco</a>
+      <a href="#funciona">Cómo funciona</a>
+      <a href="#token">$ARENA</a>
+    </nav>
+  </div>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<section class="hero" id="top">
+  <div class="wrap">
+    <p class="kicker"><span class="live-dot"></span> LIGA DE MEMES · xSTOCKS REALES</p>
+    <h1 class="title"><span>Ponle una</span><span class="x-line"><span class="x">x</span>. La arena espera.</span></h1>
+    <p class="tagline">Cada xStock real es un luchador enmascarado. Gana o pierde el asalto según el movimiento real del activo — nadie edita el meme, el mercado lo hace.</p>
+    <div class="hero-cta">
+      <a class="btn primary" href="#combate">Elige tu combate →</a>
+      <a class="btn" href="#elenco">Ver el elenco</a>
+    </div>
+  </div>
+</section>
+
+<div class="ropes"><span></span><span class="mid"></span><span></span></div>
+
+<section id="pelea">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="round-tag">ASALTO 01</span>
+      <h2>El Chipote vs El Cohete</h2>
+      <p>Dos luchadores, un ring, el mercado real como árbitro. Gana quien se movió más — en cualquier dirección.</p>
+    </div>
+    <div class="fight-grid reveal">
+      <div class="fight-card">
+        <img src="assets/FIGHT_NVDAx_vs_TSLAx.svg" alt="El Chipote (NVDAx) vs El Cohete (TSLAx)">
+      </div>
+      <div class="fight-meta">
+        <div class="vs-row">
+          <div class="vs-fighter">
+            <div class="name">EL CHIPOTE</div>
+            <div class="ticker-lbl">NVDAx · -0.90%</div>
+          </div>
+          <div class="vs-x">VS</div>
+          <div class="vs-fighter">
+            <div class="name">EL COHETE</div>
+            <div class="ticker-lbl">TSLAx · -0.75%</div>
+          </div>
+        </div>
+        <p class="fight-quote">"Gana el que más se movió." No es consejo de inversión — es el marcador de la semana. El resultado real de cada xStock decide quién sale con la máscara en alto y quién sale arrastrado.</p>
+        <a class="btn" href="#combate">Monta tu propio combate →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="combate">
+  <div class="wrap">
+    <div class="section-head center reveal" style="margin-inline:auto">
+      <span class="round-tag">TÚ ELIGES</span>
+      <h2>Arma tu combate</h2>
+      <p>Escoge dos xLuchadores y la Arena calcula el ganador con el % real de cierre de cada uno.</p>
+    </div>
+    <div class="picker-box reveal">
+      <div class="picker-row">
+        <div class="picker-field">
+          <label>LUCHADOR A</label>
+          <select id="fighterA"></select>
+        </div>
+        <div class="picker-vs">VS</div>
+        <div class="picker-field">
+          <label>LUCHADOR B</label>
+          <select id="fighterB"></select>
+        </div>
+      </div>
+      <div class="picker-go">
+        <button class="btn primary" id="fightBtn" type="button">🔔 ¡A pelear!</button>
+      </div>
+      <div id="fightResult">
+        <div class="result-grid">
+          <div class="result-card" id="cardA"></div>
+          <div class="vs-x">VS</div>
+          <div class="result-card" id="cardB"></div>
+        </div>
+        <p class="result-verdict" id="verdict"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="ropes"><span></span><span class="mid"></span><span></span></div>
+
+<section id="elenco">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="round-tag">EL ELENCO</span>
+      <h2>10 xStocks. 10 luchadores.</h2>
+      <p>Cada ficha está viva: la máscara, el color y el marcador cambian solos según el % real de cierre del activo.</p>
+    </div>
+    <div class="roster-grid" id="rosterGrid"></div>
+  </div>
+</section>
+
+<section class="alt" id="funciona">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="round-tag">EL MOTOR</span>
+      <h2>Cómo decide la arena quién gana</h2>
+      <p>Se lee la variación % real del xStock en el cierre del día y se mapea directamente a un estado del luchador. Nadie dibuja el resultado a mano.</p>
+    </div>
+    <table class="state-table reveal">
+      <thead><tr><th>Variación</th><th>Estado</th><th>Visual</th></tr></thead>
+      <tbody>
+        <tr><td>≥ +3%</td><td><span class="pill legend">MODO LEYENDA</span></td><td>Aura dorada, cámara lenta, público en pie</td></tr>
+        <tr><td>+0.5% … +3%</td><td><span class="pill win">ASALTO GANADO</span></td><td>En guardia, sonriendo, sube al esquinero</td></tr>
+        <tr><td>−0.5% … +0.5%</td><td><span class="pill draw">EMPATE TÉCNICO</span></td><td>Cansado, se limpia el sudor, mira al público</td></tr>
+        <tr><td>−3% … −0.5%</td><td><span class="pill down">A LA LONA</span></td><td>De rodillas, vendado, intenta levantarse</td></tr>
+        <tr><td>≤ −3%</td><td><span class="pill ko">K.O.</span></td><td>Tumbado en la lona, entra la toalla</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="token">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="round-tag">SOBRE $ARENA</span>
+      <h2>Un token sin truco de marketing</h2>
+      <p>No hay quema por transferencia ni promesa de que el precio solo puede subir. Hay una sola regla: si no hay ingresos reales, no hay recompra.</p>
+    </div>
+    <div class="token-grid reveal">
+      <ul class="rule-list">
+        <li><span class="mark">✓</span> <span><b>Suministro fijo, sin mint posterior.</b> Nadie puede inflar el token después del lanzamiento.</span></li>
+        <li><span class="mark">✓</span> <span><b>Transferencia 1:1, sin fee.</b> Se eliminó el diseño tipo "quema por transferencia" — sube la fricción y no crea valor real.</span></li>
+        <li><span class="mark">✓</span> <span><b>Sin owner, sin rug switch.</b> No hay funciones de gobernanza que puedan cambiar las reglas a mitad de partida.</span></li>
+        <li><span class="mark">✓</span> <span><b>Recompra financiada con ingresos, no con nuevos compradores.</b> La taquilla de la Arena reenvía el 100% al vault; el vault compra $ARENA en el mercado y lo quema.</span></li>
+        <li><span class="mark">✓</span> <span><b>Permissionless y auditable.</b> Cualquiera puede disparar la quema; el dueño no puede desviar los fondos mientras el motor está activo.</span></li>
+      </ul>
+      <div>
+        <div class="flow">usuario paga en <b>ArenaBoxOffice</b> (crear personaje / votar / reservar asalto)
+      │
+      ▼  100% reenviado, nada retenido
+<b>FeesVault</b>.depositRevenue()
+      │
+      ▼  permissionless
+<b>FeesVault</b>.buybackAndBurn()
+      │
+      ▼  swap en el AMM
+tokens comprados ──► 0x…dEaD (quema)</div>
+        <div class="callout" style="margin-top:18px">
+          <b>Honesto, sin adornos:</b> si no hay ingresos, no hay quema. Nada en este proyecto promete que el precio va a subir — ni en el contrato, ni en la web, ni en los memes.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-disclaimer">
+        <b>La Arena</b> es un proyecto de entretenimiento/cultura. Los estados de los luchadores reflejan el movimiento real de xStocks (acciones y ETFs tokenizados 1:1 por <a href="https://xstocks.fi/" target="_blank" rel="noopener">xstocks.fi</a>) con fines narrativos. Nada en esta página es asesoramiento financiero, oferta de valores ni promesa de rentabilidad. xStocks no está disponible en EE.UU., Reino Unido, Canadá ni Australia — esta campaña respeta esa restricción geográfica. $ARENA, si llega a desplegarse, lo hará con auditoría previa y sin garantía de apreciación.
+      </div>
+      <div class="foot-links">
+        <a href="https://xstocks.fi/" target="_blank" rel="noopener">xstocks.fi ↗</a>
+      </div>
+    </div>
+    <div class="foot-bottom">LA ARENA — entretenimiento, no asesoramiento financiero.</div>
+  </div>
+</footer>
+
+<script>
+const FIGHTERS = [
+  {ticker:'NVDAx', name:'EL CHIPOTE', pct:-0.90, quote:'"El Chipote no se calienta. Se cotiza."', img:'assets/NVDAx_LONA.svg'},
+  {ticker:'TSLAx', name:'EL COHETE', pct:-0.75, quote:'"Aterrizar es de cobardes."', img:'assets/TSLAx_LONA.svg'},
+  {ticker:'GMEx', name:'EL SAPO', pct:-0.69, quote:'"Puedes pisarlo. No puedes matarlo."', img:'assets/GMEx_LONA.svg'},
+  {ticker:'AAPLx', name:'LA MANZANA', pct:1.08, quote:'"Siempre pulida, nunca mordida."', img:'assets/AAPLx_GANA.svg'},
+  {ticker:'METAx', name:'EL DOBLE', pct:-2.11, quote:'"¿Cuál de todos es el real?"', img:'assets/METAx_LONA.svg'},
+  {ticker:'COINx', name:'EL PONCHE', pct:-3.78, quote:'"Un cross directo al bolsillo."', img:'assets/COINx_KO.svg'},
+  {ticker:'MSTRx', name:'EL TANQUE', pct:-6.42, quote:'"Va cargado hasta el techo."', img:'assets/MSTRx_KO.svg'},
+  {ticker:'AMZx', name:'EL PAQUETE', pct:1.28, quote:'"Llega en 24h. También el golpe."', img:'assets/AMZx_GANA.svg'},
+  {ticker:'PLTRx', name:'EL OJO', pct:0.67, quote:'"Te ve antes de que te muevas."', img:'assets/PLTRx_GANA.svg'},
+  {ticker:'SPYx', name:'EL ESPEJO', pct:-0.24, quote:'"Si él cae, cae toda la arena."', img:'assets/SPYx_EMPATE.svg'}
+];
+
+function fmtPct(p){ return (p>0?'+':'') + p.toFixed(2) + '%'; }
+
+// Ticker marquee (duplicated for seamless loop)
+(function buildTicker(){
+  const track = document.getElementById('tickerTrack');
+  const items = FIGHTERS.map(f => {
+    const dir = f.pct >= 0 ? 'up' : 'down';
+    const arrow = f.pct >= 0 ? '▲' : '▼';
+    return `<span class="ticker-item ${dir}"><b>${f.name}</b> (${f.ticker}) ${arrow} ${fmtPct(f.pct)}</span>`;
+  }).join('');
+  track.innerHTML = items + items;
+})();
+
+// Roster grid
+(function buildRoster(){
+  const grid = document.getElementById('rosterGrid');
+  grid.innerHTML = FIGHTERS.map(f => `
+    <div class="fighter-card reveal">
+      <img src="${f.img}" alt="${f.name} — ${f.ticker}" loading="lazy">
+      <div class="fighter-foot">
+        <div class="fighter-name">${f.name} · ${f.ticker}</div>
+        <div class="fighter-quote">${f.quote}</div>
+      </div>
+    </div>`).join('');
+})();
+
+// Fight picker
+const selA = document.getElementById('fighterA');
+const selB = document.getElementById('fighterB');
+FIGHTERS.forEach((f,i) => {
+  selA.innerHTML += `<option value="${i}">${f.name} (${f.ticker})</option>`;
+  selB.innerHTML += `<option value="${i}">${f.name} (${f.ticker})</option>`;
+});
+selA.selectedIndex = 0;
+selB.selectedIndex = 1;
+
+function renderResultCard(el, f, isWinner){
+  el.className = 'result-card' + (isWinner ? ' winner' : '');
+  el.innerHTML = `${isWinner ? '<div class="winner-ribbon">GANADOR</div>' : ''}
+    <img src="${f.img}" alt="${f.name}">
+    <div class="cap"><div class="nm">${f.name} · ${f.ticker}</div><div class="pc" style="color:${f.pct>=0?'var(--win)':'var(--lose)'}">${fmtPct(f.pct)}</div></div>`;
+}
+
+document.getElementById('fightBtn').addEventListener('click', () => {
+  const a = FIGHTERS[selA.value], b = FIGHTERS[selB.value];
+  const result = document.getElementById('fightResult');
+  const verdict = document.getElementById('verdict');
+  if (selA.value === selB.value){
+    verdict.innerHTML = 'Elige a <b>dos</b> luchadores distintos para el combate.';
+    result.classList.remove('show'); result.classList.add('show');
+    document.getElementById('cardA').className='result-card';
+    document.getElementById('cardA').innerHTML='';
+    document.getElementById('cardB').className='result-card';
+    document.getElementById('cardB').innerHTML='';
+    return;
+  }
+  const moveA = Math.abs(a.pct), moveB = Math.abs(b.pct);
+  const aWins = moveA > moveB;
+  const tie = moveA === moveB;
+  renderResultCard(document.getElementById('cardA'), a, aWins && !tie);
+  renderResultCard(document.getElementById('cardB'), b, !aWins && !tie);
+  if (tie){
+    verdict.innerHTML = `<b>EMPATE DE MOVIMIENTO</b> — ambos se movieron ${moveA.toFixed(2)} puntos. La arena lo declara asalto parejo.`;
+  } else {
+    const winner = aWins ? a : b;
+    const diff = Math.abs(moveA - moveB).toFixed(2);
+    verdict.innerHTML = `<b>${winner.name}</b> gana el asalto por <b>${diff} puntos</b> de movimiento real. Recuerda: esto mide quién se movió más, no quién es "mejor inversión".`;
+  }
+  result.classList.add('show');
+});
+
+// Scroll reveal
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in-view'); obs.unobserve(e.target); } });
+}, {threshold:.12});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+// Roster cards are injected after initial parse — observe them too
+document.querySelectorAll('#rosterGrid .reveal').forEach(el => obs.observe(el));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+  <rect width="1080" height="1350" fill="#0d0d0d"/>
+  <rect width="1080" height="1350" fill="url(#none)"/>
+  <rect x="24" y="24" width="1032" height="1302" fill="none" stroke="#ff7b72" stroke-width="3" opacity="0.6"/>
+  <text x="540" y="120" text-anchor="middle" font-family="monospace" font-size="34" letter-spacing="12" fill="#fff">ASALTO DE LA SEMANA</text>
+
+  <text x="540" y="300" text-anchor="middle" font-family="monospace" font-size="56" font-weight="bold" fill="#fff">TSLAx</text>
+  <text x="540" y="360" text-anchor="middle" font-family="monospace" font-size="34" fill="#ff7b72">GANA EL QUE MÁS SE MOVIÓ</text>
+
+  <text x="300" y="560" text-anchor="middle" font-family="monospace" font-size="40" fill="#888">NVDAx</text>
+  <text x="300" y="630" text-anchor="middle" font-family="monospace" font-size="72" font-weight="bold" fill="#ff4d4d">-0.90%</text>
+
+  <text x="780" y="560" text-anchor="middle" font-family="monospace" font-size="40" fill="#888">TSLAx</text>
+  <text x="780" y="630" text-anchor="middle" font-family="monospace" font-size="72" font-weight="bold" fill="#ff4d4d">-0.75%</text>
+
+  <text x="540" y="600" text-anchor="middle" font-family="monospace" font-size="80" font-weight="bold" fill="#555">VS</text>
+
+  <g transform="translate(180,950) scale(0.9)"><g transform="translate(0,-40)">
+    <path d="M-120,20 C-120,-110 120,-110 120,20 C120,96 70,120 0,120 C-70,120 -120,96 -120,20 Z" fill="#ff4d4d"/>
+    <path d="M-120,20 C-60,-10 60,-10 120,20 L120,44 C60,80 -60,80 -120,44 Z" fill="#0d0d0d" opacity="0.35"/>
+    <path d="M-34,-14 l22,22 M-12,-14 l-22,22" stroke="#0d0d0d" stroke-width="9" stroke-linecap="round"/>
+       <path d="M34,-14 l22,22 M56,-14 l-22,22" stroke="#0d0d0d" stroke-width="9" stroke-linecap="round"/>
+    <rect x="-14" y="58" width="28" height="46" rx="10" fill="#0d0d0d" opacity="0.4"/>
+  </g></g>
+  <g transform="translate(900,950) scale(0.9)"><g transform="translate(0,-40)">
+    <path d="M-120,20 C-120,-110 120,-110 120,20 C120,96 70,120 0,120 C-70,120 -120,96 -120,20 Z" fill="#ff7b72"/>
+    <path d="M-120,20 C-60,-10 60,-10 120,20 L120,44 C60,80 -60,80 -120,44 Z" fill="#0d0d0d" opacity="0.35"/>
+    <ellipse cx="-30" cy="0" rx="20" ry="9" fill="#0d0d0d"/><ellipse cx="30" cy="0" rx="20" ry="9" fill="#0d0d0d"/>
+    <rect x="-14" y="58" width="28" height="46" rx="10" fill="#0d0d0d" opacity="0.4"/>
+  </g></g>
+  <text x="1080" y="180" text-anchor="end" font-family="monospace" font-size="60" font-weight="bold" fill="#ff7b72">x</text>
+  <text x="540" y="1290" text-anchor="middle" font-family="monospace" font-size="22" fill="#777">Ponle una x. La Arena espera. · entretenimiento, no asesoramiento financiero</text>
+</svg>
